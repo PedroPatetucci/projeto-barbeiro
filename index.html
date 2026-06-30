@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendamento Barbearia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-white font-sans text-gray-900 antialiased min-h-screen flex flex-col justify-between">
+
+    <header class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto w-full border-b border-gray-50">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="voltarParaServicos()">
+            <div class="w-10 h-10 rounded-full border-2 border-amber-600 flex items-center justify-center bg-white shadow-inner">
+                <span class="text-lg font-extrabold tracking-tighter text-amber-700">RS</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 md:py-8 flex flex-col lg:flex-row gap-8 lg:gap-12 flex-1 justify-center">
+        
+        <section id="coluna-carrinho" class="w-full lg:w-96">
+            
+            <div id="passo-servicos">
+                <h2 class="text-2xl font-bold mb-6 text-gray-950">Selecione os Serviços</h2>
+                <div id="lista-servicos" class="divide-y divide-gray-100">
+                    </div>
+            </div>
+
+            <div id="passo-agenda" class="hidden">
+                <button onclick="voltarParaServicos()" class="flex items-center gap-2 text-sm text-gray-500 hover:text-black mb-6 transition-colors">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar para serviços
+                </button>
+                
+                <h2 class="text-2xl font-bold mb-2 text-gray-950">Escolha o Dia e Horário</h2>
+                <p class="text-sm text-gray-500 mb-6">Selecione uma data para ver os horários disponíveis para o seu atendimento.</p>
+
+                <div class="mb-8">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Data do Atendimento:</label>
+                    <input type="date" id="input-data" class="border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500" onchange="gerarHorariosDisponiveis()">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-3">Horários Disponíveis:</label>
+                    <div id="grade-horarios" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 gap-3">
+                        </div>
+                </div>
+            </div>
+
+            <div id="passo-sucesso" class="hidden text-center py-12 max-w-md mx-auto">
+                <div class="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="check-circle" class="w-10 h-10"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-950 mb-2">Agendamento Confirmado!</h2>
+                <p id="texto-confirmacao" class="text-gray-600 text-sm leading-relaxed"></p>
+                <button onclick="reiniciarFluxo()" class="mt-6 bg-black text-white px-6 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-900 transition-all">
+                    Novo Agendamento
+                </button>
+            </div>
+
+        </section>
+
+        <section id="coluna-carrinho" class="w-full md:w-96">
+            <div class="border border-gray-100 rounded-xl p-6 bg-white shadow-sm sticky top-6">
+                <h2 class="text-lg font-semibold mb-4 text-gray-900">Resumo do Agendamento</h2>
+                
+                <div id="carrinho-container" class="min-h-[100px] flex flex-col justify-center">
+                    <div id="carrinho-vazio" class="text-center py-6 text-gray-400 border border-dashed border-gray-200 rounded-lg p-4 text-sm">
+                        Nenhum serviço adicionado ainda
+                    </div>
+                    
+                    <ul id="carrinho-itens" class="hidden space-y-3 mb-4 max-h-60 overflow-y-auto pr-1"></ul>
+
+                    <div id="carrinho-totais" class="hidden border-t border-gray-100 pt-4 mb-6 space-y-2">
+                        <div class="flex justify-between text-sm text-gray-500">
+                            <span>Tempo estimado:</span>
+                            <span id="tempo-total" class="font-medium text-gray-800">0 min</span>
+                        </div>
+                        <div class="flex justify-between text-base font-bold text-gray-900">
+                            <span>Valor total:</span>
+                            <span id="valor-total">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btn-acao" disabled onclick="avancarPasso()" class="w-full bg-gray-100 text-gray-400 font-medium py-3 rounded-lg cursor-not-allowed transition-all duration-200">
+                    Avançar
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <div class="fixed bottom-6 right-6 z-50">
+        <button class="bg-white hover:bg-gray-50 text-gray-800 font-medium px-4 py-2.5 rounded-full shadow-lg border border-gray-200 flex items-center gap-2 text-sm transition-all">
+            <i data-lucide="message-square" class="w-4 h-4"></i>
+            Fale conosco
+        </button>
+    </div>
+
+    <script>
+        // Banco de dados simulado de serviços (Durações em minutos absolutos)
+        const servicos = [
+            { id: 1, nome: "Máquina", preco: 60.00, tempo: 60, txtTempo: "1 hora" },
+            { id: 2, nome: "Máquina + Tesoura", preco: 80.00, tempo: 120, txtTempo: "2 horas" },
+            { id: 3, nome: "Sobrancelha", preco: 15.00, tempo: 10, txtTempo: "10 min" },
+            { id: 4, nome: "Pezinho", preco: 20.00, tempo: 30, txtTempo: "30 min" },
+            { id: 5, nome: "Barba", preco: 40.00, tempo: 50, txtTempo: "50 min" },
+            { id: 6, nome: "Tesoura", preco: 60.00, tempo: 60, txtTempo: "1 hora" }
+        ];
+
+        // Ocupações fixas: Simula outro cliente das 13:00 às 14:00 (dois blocos de 30 minutos)
+        const horariosOcupadosSimulados = [""]; 
+
+        // Estado da aplicação
+        let carrinho = [];
+        let passoAtual = 1; 
+        let dataSelecionada = "";
+        let horarioSelecionado = "";
+        let tempoTotalAtendimento = 0;
+        let valorTotalAtendimento = 0;
+
+        // Elementos HTML
+        const listaServicosEl = document.getElementById('lista-servicos');
+        const carrinhoVazioEl = document.getElementById('carrinho-vazio');
+        const carrinhoItensEl = document.getElementById('carrinho-itens');
+        const carrinhoTotaisEl = document.getElementById('carrinho-totais');
+        const tempoTotalEl = document.getElementById('tempo-total');
+        const valorTotalEl = document.getElementById('valor-total');
+        const btnAcaoEl = document.getElementById('btn-acao');
+        const inputDataEl = document.getElementById('input-data');
+
+        // Configura a data mínima do calendário para HOJE
+        if(inputDataEl) {
+            const hoje = new Date().toISOString().split('T')[0];
+            inputDataEl.min = hoje;
+        }
+
+        // Renderiza serviços
+        function renderizarServicos() {
+            if (!listaServicosEl) return;
+            listaServicosEl.innerHTML = servicos.map(s => {
+                const noCarrinho = carrinho.includes(s.id);
+                return `
+                    <div class="py-5 flex justify-between items-center group cursor-pointer" onclick="alternarItemCarrinho(${s.id})">
+                        <div>
+                            <h3 class="font-medium text-gray-900 group-hover:text-amber-600 transition-colors">${s.nome}</h3>
+                            <p class="text-sm text-gray-500 mt-1">R$ ${s.preco.toFixed(2).replace('.', ',')} &bull; ${s.txtTempo}</p>
+                        </div>
+                        <span class="text-xs font-semibold uppercase tracking-wider px-3 py-1.5 rounded-md transition-all ${
+                            noCarrinho ? 'bg-amber-100 text-amber-800' : 'bg-gray-50 text-gray-600 group-hover:bg-gray-100'
+                        }">${noCarrinho ? 'Selecionado' : 'Adicionar'}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function alternarItemCarrinho(id) {
+            if (passoAtual !== 1) return; 
+            const index = carrinho.indexOf(id);
+            if (index > -1) carrinho.splice(index, 1);
+            else carrinho.push(id);
+            atualizarCarrinho();
+            renderizarServicos();
+        }
+
+        function atualizarCarrinho() {
+            if (carrinho.length === 0) {
+                carrinhoVazioEl.classList.remove('hidden');
+                carrinhoItensEl.classList.add('hidden');
+                carrinhoTotaisEl.classList.add('hidden');
+                btnAcaoEl.disabled = true;
+                btnAcaoEl.innerText = "Avançar";
+                btnAcaoEl.className = "w-full bg-gray-100 text-gray-400 font-medium py-3 rounded-lg cursor-not-allowed";
+                return;
+            }
+
+            carrinhoVazioEl.classList.add('hidden');
+            carrinhoItensEl.classList.remove('hidden');
+            carrinhoTotaisEl.classList.remove('hidden');
+
+            valorTotalAtendimento = 0;
+            tempoTotalAtendimento = 0;
+            let itensHTML = '';
+
+            carrinho.forEach(id => {
+                const item = servicos.find(s => s.id === id);
+                if (item) {
+                    valorTotalAtendimento += item.preco;
+                    tempoTotalAtendimento += item.tempo;
+                    // Adicionado o botão de lixeira que chama a função alternarItemCarrinho
+                    itensHTML += `
+                        <li class="flex justify-between items-center text-sm bg-gray-50 p-2.5 rounded-lg border border-gray-100 group">
+                            <div class="flex-1 pr-2">
+                                <p class="font-medium text-gray-800">${item.nome}</p>
+                                <span class="font-semibold text-gray-900 text-xs">R$ ${item.preco.toFixed(2).replace('.', ',')}</span>
+                            </div>
+                            <button onclick="alternarItemCarrinho(${item.id})" class="text-gray-400 hover:text-red-600 p-1 rounded transition-colors" title="Remover serviço">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </li>
+                    `;
+                }
+            });
+
+            carrinhoItensEl.innerHTML = itensHTML;
+            
+            // Recarrega os ícones do Lucide para desenhar a lixeira nova na tela
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Exibição amigável do tempo estimado
+            tempoTotalEl.innerText = tempoTotalAtendimento >= 60 
+                ? `${Math.floor(tempoTotalAtendimento / 60)}h ${tempoTotalAtendimento % 60 > 0 ? (tempoTotalAtendimento % 60) + 'min' : ''}`.trim()
+                : `${tempoTotalAtendimento} min`;
+                
+            valorTotalEl.innerText = `R$ ${valorTotalAtendimento.toFixed(2).replace('.', ',')}`;
+
+            if (passoAtual === 1) {
+                btnAcaoEl.disabled = false;
+                btnAcaoEl.innerText = "Escolher Dia e Horário";
+                btnAcaoEl.className = "w-full bg-black text-white hover:bg-gray-900 font-medium py-3 rounded-lg cursor-pointer transition-all";
+            }
+        }
+
+        // Geração dos horários com Inteligência de Tempo Real (Configurado para Atendimento a Domicílio Sem Limite Rígido)
+function gerarHorariosDisponiveis() {
+    dataSelecionada = inputDataEl.value;
+    const gradeEl = document.getElementById('grade-horarios');
+    if (!gradeEl) return;
+    
+    if (!dataSelecionada) {
+        gradeEl.innerHTML = `<p class="text-sm text-gray-400 col-span-full">Por favor, escolha uma data acima.</p>`;
+        return;
+    }
+
+    // Todos os horários de atendimento que você deseja oferecer (incluindo noite)
+    const horariosTrabalho = [
+        "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
+        "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", 
+        "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", 
+        "18:00", "18:30", "19:00", "19:30", "20:00", "20:30"
+    ];
+    
+    // Removemos a trava fixa de fim de jornada para permitir atendimentos à noite
+
+    function converterParaMinutos(horarioStr) {
+        const [horas, minutos] = horarioStr.split(':').map(Number);
+        return (horas * 60) + minutos;
+    }
+
+    gradeEl.innerHTML = horariosTrabalho.map(hora => {
+        let horarioBloqueado = false;
+        const inicioProposto = converterParaMinutos(hora);
+        const terminoProposto = inicioProposto + tempoTotalAtendimento;
+
+        // Trava de Concorrência: O serviço proposto invade o horário de outro cliente agendado?
+        horariosOcupadosSimulados.forEach(ocupado => {
+            const inicioOcupado = converterParaMinutos(ocupado);
+            const terminoOcupado = inicioOcupado + 30; // Cada slot ocupado dura 30 minutos
+
+            if (inicioProposto < terminoOcupado && terminoProposto > inicioOcupado) {
+                horarioBloqueado = true;
+            }
+        });
+
+        const selecionado = horarioSelecionado === hora;
+
+        if (horarioBloqueado) {
+            return `
+                <button disabled class="bg-gray-50 text-gray-300 border border-gray-100 line-through rounded-lg py-2.5 text-sm cursor-not-allowed font-medium">
+                    ${hora}
+                </button>
+            `;
+        } else {
+            return `
+                <button onclick="selecionarHorario('${hora}')" class="border rounded-lg py-2.5 text-sm font-medium transition-all ${
+                    selecionado 
+                        ? 'bg-amber-600 text-white border-amber-600 shadow-sm' 
+                        : 'border-gray-200 text-gray-700 hover:border-black bg-white'
+                }">
+                    ${hora}
+                </button>
+            `;
+        }
+    }).join('');
+}
+
+        function selecionarHorario(hora) {
+            horarioSelecionado = hora;
+            gerarHorariosDisponiveis();
+            
+            btnAcaoEl.disabled = false;
+            btnAcaoEl.innerText = "Confirmar Agendamento";
+            btnAcaoEl.className = "w-full bg-amber-600 text-white hover:bg-amber-700 font-medium py-3 rounded-lg cursor-pointer transition-all";
+        }
+
+        function avancarPasso() {
+            if (passoAtual === 1) {
+                passoAtual = 2;
+                document.getElementById('passo-servicos').classList.add('hidden');
+                document.getElementById('passo-agenda').classList.remove('hidden');
+                btnAcaoEl.disabled = true;
+                btnAcaoEl.innerText = "Selecione um horário";
+                btnAcaoEl.className = "w-full bg-gray-100 text-gray-400 font-medium py-3 rounded-lg cursor-not-allowed";
+                gerarHorariosDisponiveis();
+            } else if (passoAtual === 2 && horarioSelecionado) {
+                passoAtual = 3;
+                document.getElementById('passo-agenda').classList.add('hidden');
+                document.getElementById('coluna-carrinho').classList.add('hidden');
+                document.getElementById('passo-sucesso').classList.remove('hidden');
+                
+                const dataFormatada = dataSelecionada.split('-').reverse().join('/');
+                document.getElementById('texto-confirmacao').innerHTML = `Seu atendimento foi reservado para o dia <strong>${dataFormatada}</strong> às <strong>${horarioSelecionado}</strong>.<br><br>O valor total ficou em <strong>R$ ${valorTotalAtendimento.toFixed(2).replace('.', ',')}</strong> com duração de <strong>${tempoTotalEl.innerText}</strong>.`;
+            }
+        }
+
+        function voltarParaServicos() {
+            if (passoAtual !== 2) return;
+            passoAtual = 1;
+            document.getElementById('passo-agenda').classList.add('hidden');
+            document.getElementById('passo-servicos').classList.remove('hidden');
+            horarioSelecionado = "";
+            atualizarCarrinho();
+        }
+
+        function reiniciarFluxo() {
+            carrinho = [];
+            passoAtual = 1;
+            dataSelecionada = "";
+            horarioSelecionado = "";
+            inputDataEl.value = "";
+            
+            document.getElementById('passo-sucesso').classList.add('hidden');
+            document.getElementById('passo-servicos').classList.remove('hidden');
+            document.getElementById('coluna-carrinho').classList.remove('hidden');
+            
+            atualizarCarrinho();
+            renderizarServicos();
+        }
+
+        // Inicialização do App
+        renderizarServicos();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
