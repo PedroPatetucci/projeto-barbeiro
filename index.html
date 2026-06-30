@@ -224,56 +224,56 @@
         }
 
         // Geração dos horários com Inteligência de Tempo Real (Configurado para Atendimento a Domicílio Sem Limite Rígido)
-function gerarHorariosDisponiveis() {
-    dataSelecionada = inputDataEl.value;
-    const gradeEl = document.getElementById('grade-horarios');
-    if (!gradeEl) return;
+        function gerarHorariosDisponiveis() {
+            dataSelecionada = inputDataEl.value;
+            const gradeEl = document.getElementById('grade-horarios');
+            if (!gradeEl) return;
     
-    if (!dataSelecionada) {
-        gradeEl.innerHTML = `<p class="text-sm text-gray-400 col-span-full">Por favor, escolha uma data acima.</p>`;
-        return;
-    }
-
-    // Todos os horários de atendimento que você deseja oferecer (incluindo noite)
-    const horariosTrabalho = [
-        "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
-        "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", 
-        "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", 
-        "18:00", "18:30", "19:00", "19:30", "20:00", "20:30"
-    ];
-    
-    // Removemos a trava fixa de fim de jornada para permitir atendimentos à noite
-
-    function converterParaMinutos(horarioStr) {
-        const [horas, minutos] = horarioStr.split(':').map(Number);
-        return (horas * 60) + minutos;
-    }
-
-    gradeEl.innerHTML = horariosTrabalho.map(hora => {
-        let horarioBloqueado = false;
-        const inicioProposto = converterParaMinutos(hora);
-        const terminoProposto = inicioProposto + tempoTotalAtendimento;
-
-        // Trava de Concorrência: O serviço proposto invade o horário de outro cliente agendado?
-        horariosOcupadosSimulados.forEach(ocupado => {
-            const inicioOcupado = converterParaMinutos(ocupado);
-            const terminoOcupado = inicioOcupado + 30; // Cada slot ocupado dura 30 minutos
-
-            if (inicioProposto < terminoOcupado && terminoProposto > inicioOcupado) {
-                horarioBloqueado = true;
+            if (!dataSelecionada) {
+                gradeEl.innerHTML = `<p class="text-sm text-gray-400 col-span-full">Por favor, escolha uma data acima.</p>`;
+                return;
             }
-        });
 
-        const selecionado = horarioSelecionado === hora;
+             // Todos os horários de atendimento que você deseja oferecer (incluindo noite)
+            const horariosTrabalho = [
+                "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
+                "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", 
+                "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", 
+                "18:00", "18:30", "19:00", "19:30", "20:00", "20:30"
+            ];
+    
+             // Removemos a trava fixa de fim de jornada para permitir atendimentos à noite
 
-        if (horarioBloqueado) {
-            return `
+             function converterParaMinutos(horarioStr) {
+                const [horas, minutos] = horarioStr.split(':').map(Number);
+                return (horas * 60) + minutos;
+            }
+
+            gradeEl.innerHTML = horariosTrabalho.map(hora => {
+                let horarioBloqueado = false;
+                const inicioProposto = converterParaMinutos(hora);
+                const terminoProposto = inicioProposto + tempoTotalAtendimento;
+
+            // Trava de Concorrência: O serviço proposto invade o horário de outro cliente agendado?
+            horariosOcupadosSimulados.forEach(ocupado => {
+                const inicioOcupado = converterParaMinutos(ocupado);
+                const terminoOcupado = inicioOcupado + 30; // Cada slot ocupado dura 30 minutos
+
+                if (inicioProposto < terminoOcupado && terminoProposto > inicioOcupado) {
+                    horarioBloqueado = true;
+                }
+            });
+
+            const selecionado = horarioSelecionado === hora;
+
+            if (horarioBloqueado) {
+                return `
                 <button disabled class="bg-gray-50 text-gray-300 border border-gray-100 line-through rounded-lg py-2.5 text-sm cursor-not-allowed font-medium">
                     ${hora}
                 </button>
             `;
-        } else {
-            return `
+            } else {
+                return `
                 <button onclick="selecionarHorario('${hora}')" class="border rounded-lg py-2.5 text-sm font-medium transition-all ${
                     selecionado 
                         ? 'bg-amber-600 text-white border-amber-600 shadow-sm' 
@@ -282,9 +282,9 @@ function gerarHorariosDisponiveis() {
                     ${hora}
                 </button>
             `;
-        }
-    }).join('');
-}
+            }
+            }).join('');
+    }
 
         function selecionarHorario(hora) {
             horarioSelecionado = hora;
