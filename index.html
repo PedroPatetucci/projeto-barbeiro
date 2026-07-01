@@ -6,6 +6,8 @@
     <title>Agendamento Barbearia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-white font-sans text-gray-900 antialiased min-h-screen flex flex-col justify-between">
 
@@ -28,35 +30,35 @@
             </div>
 
             <div id="passo-agenda" class="hidden">
-                <button onclick="voltarParaServicos()" class="flex items-center gap-2 text-sm text-gray-500 hover:text-black mb-6 transition-colors">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar para serviços
-                </button>
-                
-                <h2 class="text-2xl font-bold mb-2 text-gray-950">Escolha o Dia e Horário</h2>
-                <p class="text-sm text-gray-500 mb-6">Selecione uma data para ver os horários disponíveis para o seu atendimento.</p>
+  <button onclick="voltarParaServicos()" class="flex items-center gap-2 text-sm text-gray-500 mb-4">
+    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar para serviços
+  </button>
 
-                <div class="mb-8">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Data do Atendimento:</label>
-                    <input type="date" id="input-data" class="border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500" onchange="gerarHorariosDisponiveis()">
-                </div>
+  <h2 class="text-2xl font-bold mb-2 text-gray-900">Escolha o Dia e Horário</h2>
+  <p class="text-sm text-gray-500 mb-6">Selecione uma data para ver os horários disponíveis.</p>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-3">Horários Disponíveis:</label>
-                    <div id="grade-horarios" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-4 gap-3">
-                        </div>
-                </div>
-            </div>
+  <div class="mb-8">
+    <label class="block text-sm font-medium text-gray-700 mb-2">Data do Atendimento:</label>
+    <input type="date" id="input-data" class="border border-gray-200 rounded p-2">
+  </div>
 
-            <div id="passo-sucesso" class="hidden text-center py-12 max-w-md mx-auto">
-                <div class="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="check-circle" class="w-10 h-10"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-950 mb-2">Agendamento Confirmado!</h2>
-                <p id="texto-confirmacao" class="text-gray-600 text-sm leading-relaxed"></p>
-                <button onclick="reiniciarFluxo()" class="mt-6 bg-black text-white px-6 py-2.5 rounded-lg font-medium text-sm hover:bg-gray-900 transition-all">
-                    Novo Agendamento
-                </button>
-            </div>
+  <div id="grade-horarios" class="grid grid-cols-3 gap-2 mb-8">
+    </div>
+
+  <div class="space-y-4 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-left">
+    <h3 class="text-md font-semibold text-gray-900">Dados para o Atendimento em Domicílio</h3>
+    
+    <div>
+      <label class="block text-xs font-medium text-gray-700 mb-1">Seu Nome Completo *</label>
+      <input type="text" id="input-nome" placeholder="Ex: João Silva" class="w-full border border-gray-200 rounded p-2 text-sm focus:outline-none focus:border-amber-500">
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-gray-700 mb-1">Seu Endereço Completo *</label>
+      <input type="text" id="input-endereco" placeholder="Rua, número, bairro, apto..." class="w-full border border-gray-200 rounded p-2 text-sm focus:outline-none focus:border-amber-500">
+    </div>
+  </div>
+</div>
 
         </section>
 
@@ -89,6 +91,21 @@
             </div>
         </section>
     </main>
+
+    <div id="passo-sucesso" class="hidden fixed inset-0 bg-white flex flex-col items-center justify-center text-center z-50">
+  
+  <div class="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-4">
+    <i data-lucide="check-circle" class="w-10 h-10"></i>
+  </div>
+  
+  <h2 class="text-3xl font-bold mb-2 text-gray-950">Agendamento Confirmado!</h2>
+  <p class="text-gray-500 text-sm mb-6">Seu horário foi reservado com sucesso.</p>
+  
+  <button onclick="reiniciarFluxo()" class="bg-black text-white px-6 py-2 rounded font-medium text-sm hover:bg-gray-800 transition">
+    Novo Agendamento
+  </button>
+
+</div>
 
     <div class="fixed bottom-6 right-6 z-50">
         <button class="bg-white hover:bg-gray-50 text-gray-800 font-medium px-4 py-2.5 rounded-full shadow-lg border border-gray-200 flex items-center gap-2 text-sm transition-all">
@@ -134,6 +151,23 @@
             const hoje = new Date().toISOString().split('T')[0];
             inputDataEl.min = hoje;
         }
+
+        // Adicione isso logo após a linha 149 do seu arquivo atual
+if (inputDataEl) {
+  inputDataEl.addEventListener('change', (e) => {
+    dataSelecionada = e.target.value; // Atualiza a variável com a data escolhida
+    horarioSelecionado = null;        // Limpa o horário anterior para não bugar
+    
+    // Reseta o botão principal
+    btnAcaoEl.disabled = true;
+    btnAcaoEl.innerText = "Selecione um Horário";
+    
+    console.log("Nova data selecionada pelo usuário:", dataSelecionada);
+    
+    // Força o sistema a buscar no Firebase os horários ocupados desse novo dia
+    gerarHorariosDisponiveis(); 
+  });
+}
 
         // Renderiza serviços
         function renderizarServicos() {
@@ -223,68 +257,78 @@
             }
         }
 
-        // Geração dos horários com Inteligência de Tempo Real (Configurado para Atendimento a Domicílio Sem Limite Rígido)
+        function converterParaMinutos(horarioStr) {
+            const [horas, minutos] = horarioStr.split(':').map(Number);
+            return (horas * 60) + minutos;
+        }
+
         function gerarHorariosDisponiveis() {
             dataSelecionada = inputDataEl.value;
             const gradeEl = document.getElementById('grade-horarios');
             if (!gradeEl) return;
-    
+
             if (!dataSelecionada) {
-                gradeEl.innerHTML = `<p class="text-sm text-gray-400 col-span-full">Por favor, escolha uma data acima.</p>`;
+                gradeEl.innerHTML = `<p class="text-sm text-gray-400 col-span-full">Por favor, selecione uma data.</p>`;
                 return;
             }
 
-             // Todos os horários de atendimento que você deseja oferecer (incluindo noite)
-            const horariosTrabalho = [
-                "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", 
-                "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", 
-                "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", 
-                "18:00", "18:30", "19:00", "19:30", "20:00", "20:30"
-            ];
-    
-             // Removemos a trava fixa de fim de jornada para permitir atendimentos à noite
+            // 1. Buscamos todos os agendamentos daquela data específica no Firebase
+            db.collection("agendamentos").where("data", "==", dataSelecionada).get()
+            .then((querySnapshot) => {
+                let agendamentosDoDia = [];
+      
+                querySnapshot.forEach((doc) => {
+                    agendamentosDoDia.push(doc.data());
+                });
 
-             function converterParaMinutos(horarioStr) {
-                const [horas, minutos] = horarioStr.split(':').map(Number);
-                return (horas * 60) + minutos;
-            }
+                // 2. Montamos a lista de horários de trabalho
+                const horariosTrabalho = [
+                    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+                    "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
+                    "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+                    "18:00", "18:30", "19:00", "19:30", "20:00", "20:30"
+                ];
 
-            gradeEl.innerHTML = horariosTrabalho.map(hora => {
-                let horarioBloqueado = false;
-                const inicioProposto = converterParaMinutos(hora);
-                const terminoProposto = inicioProposto + tempoTotalAtendimento;
+                // 3. Renderizamos os botões aplicando a sua lógica matemática de bloqueio
+                gradeEl.innerHTML = horariosTrabalho.map(hora => {
+                    let horarioBloqueado = false;
+                    const inicioProposto = converterParaMinutos(hora);
+                    const terminoProposto = inicioProposto + tempoTotalAtendimento;
 
-            // Trava de Concorrência: O serviço proposto invade o horário de outro cliente agendado?
-            horariosOcupadosSimulados.forEach(ocupado => {
-                const inicioOcupado = converterParaMinutos(ocupado);
-                const terminoOcupado = inicioOcupado + 30; // Cada slot ocupado dura 30 minutos
+                 // VALIDAÇÃO CONTRA O BANCO DE DADOS:
+                // O horário do loop passa por cada agendamento real que veio do Firebase
+                agendamentosDoDia.forEach(agendamento => {
+                    const inicioOcupado = converterParaMinutos(agendamento.horarioInicio);
+                    const terminoOcupado = inicioOcupado + agendamento.tempoDuracao;
 
-                if (inicioProposto < terminoOcupado && terminoProposto > inicioOcupado) {
-                    horarioBloqueado = true;
-                }
-            });
+                    // Se o horário proposto colidir com o período do agendamento existente, bloqueia!
+                    if (inicioProposto < terminoOcupado && terminoProposto > inicioOcupado) {
+                        horarioBloqueado = true;
+                    }
+                });
 
-            const selecionado = horarioSelecionado === hora;
+                const selecionado = horarioSelecionado === hora;
 
-            if (horarioBloqueado) {
+                 // Retorna o botão desativado ou ativo com base na checagem acima
                 return `
-                <button disabled class="bg-gray-50 text-gray-300 border border-gray-100 line-through rounded-lg py-2.5 text-sm cursor-not-allowed font-medium">
-                    ${hora}
-                </button>
-            `;
-            } else {
-                return `
-                <button onclick="selecionarHorario('${hora}')" class="border rounded-lg py-2.5 text-sm font-medium transition-all ${
-                    selecionado 
-                        ? 'bg-amber-600 text-white border-amber-600 shadow-sm' 
-                        : 'border-gray-200 text-gray-700 hover:border-black bg-white'
-                }">
-                    ${hora}
-                </button>
-            `;
-            }
+                    <button 
+                        onclick="${horarioBloqueado ? '' : `selecionarHorario('${hora}')`}"
+                        class="p-2 text-sm font-medium rounded-lg text-center transition-all ${
+                            horarioBloqueado 
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed line-through' 
+                                : selecionado 
+                                    ? 'bg-amber-500 text-white shadow-md' 
+                                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        }"
+                        ${horarioBloqueado ? 'disabled' : ''}
+                    >
+                        ${hora}
+                    </button>
+                `;
             }).join('');
-    }
+
+            });
+        }
 
         function selecionarHorario(hora) {
             horarioSelecionado = hora;
@@ -295,48 +339,105 @@
             btnAcaoEl.className = "w-full bg-amber-600 text-white hover:bg-amber-700 font-medium py-3 rounded-lg cursor-pointer transition-all";
         }
 
-        function avancarPasso() {
-            if (passoAtual === 1) {
-                passoAtual = 2;
-                document.getElementById('passo-servicos').classList.add('hidden');
-                document.getElementById('passo-agenda').classList.remove('hidden');
-                btnAcaoEl.disabled = true;
-                btnAcaoEl.innerText = "Selecione um horário";
-                btnAcaoEl.className = "w-full bg-gray-100 text-gray-400 font-medium py-3 rounded-lg cursor-not-allowed";
-                gerarHorariosDisponiveis();
-            } else if (passoAtual === 2 && horarioSelecionado) {
-                passoAtual = 3;
-                document.getElementById('passo-agenda').classList.add('hidden');
-                document.getElementById('coluna-carrinho').classList.add('hidden');
-                document.getElementById('passo-sucesso').classList.remove('hidden');
-                
-                const dataFormatada = dataSelecionada.split('-').reverse().join('/');
-                document.getElementById('texto-confirmacao').innerHTML = `Seu atendimento foi reservado para o dia <strong>${dataFormatada}</strong> às <strong>${horarioSelecionado}</strong>.<br><br>O valor total ficou em <strong>R$ ${valorTotalAtendimento.toFixed(2).replace('.', ',')}</strong> com duração de <strong>${tempoTotalEl.innerText}</strong>.`;
-            }
-        }
+function salvarAgendamentoNoFirebase(data, horarioInicio, tempoDuracao, nome, endereco) {
+  // Certifique-se de que a coleção bate com o nome usado no banco ("agendamentos")
+  db.collection("agendamentos").add({
+    nome: nome,          // <-- Salva o nome do cliente
+    endereco: endereco,  // <-- Salva o endereço do cliente
+    data: data,
+    horarioInicio: horarioInicio,
+    tempoDuracao: tempoDuracao,
+    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+  })
+  .then((docRef) => {
+    console.log("Agendamento completo salvo com sucesso! ID:", docRef.id);
+  })
+  .catch((error) => {
+    console.error("Erro ao salvar agendamento: ", error);
+    alert("Erro ao salvar dados no banco. Tente novamente.");
+  });
+}
+
+function avancarPasso() { 
+  // SE O CLIENTE ESTIVER NA TELA DE HORÁRIOS (PASSO 2) E CLICAR EM CONFIRMAR AGENDAMENTO
+  if (passoAtual === 2) { 
+    if (!dataSelecionada || !horarioSelecionado) {
+      alert("Por favor, selecione uma data e um horário.");
+      return;
+    }
+
+    const nomeCliente = document.getElementById('input-nome').value.trim();
+    const enderecoCliente = document.getElementById('input-endereco').value.trim();
+
+    if (!nomeCliente || !enderecoCliente) {
+      alert("Por favor, preencha seu nome e endereço para o atendimento!");
+      return;
+    }
+
+    // Envia os dados para o Firebase
+    salvarAgendamentoNoFirebase(dataSelecionada, horarioSelecionado, tempoTotalAtendimento, nomeCliente, enderecoCliente);
+    
+    // === SOLUÇÃO CRUCIAL: Esconde toda a tag <main> (Esconde a agenda e o resumo lateral) ===
+    const elementoMain = document.querySelector('main');
+    if (elementoMain) {
+      elementoMain.classList.add('hidden');
+    }
+    
+    // Mostra o ecrã de sucesso centralizado
+    const telaSucesso = document.getElementById('passo-sucesso');
+    if (telaSucesso) {
+      telaSucesso.classList.remove('hidden');
+    }
+    return; 
+  }
+  
+  // SE ELE ESTIVER NA TELA DE SERVIÇOS (PASSO 1)...
+  if (passoAtual === 1) {
+    passoAtual++;
+    document.getElementById('passo-servicos').classList.add('hidden');
+    document.getElementById('passo-agenda').classList.remove('hidden');
+    gerarHorariosDisponiveis();
+    btnAcaoEl.innerText = "Selecione um Horário";
+    btnAcaoEl.disabled = true; 
+  }
+}
 
         function voltarParaServicos() {
-            if (passoAtual !== 2) return;
             passoAtual = 1;
             document.getElementById('passo-agenda').classList.add('hidden');
             document.getElementById('passo-servicos').classList.remove('hidden');
-            horarioSelecionado = "";
-            atualizarCarrinho();
+  
+            // Reseta o botão para o estado inicial
+            btnAcaoEl.innerText = "Escolher Dia e Horário";
+            btnAcaoEl.disabled = false; 
         }
 
         function reiniciarFluxo() {
-            carrinho = [];
             passoAtual = 1;
-            dataSelecionada = "";
-            horarioSelecionado = "";
-            inputDataEl.value = "";
-            
+            carrinho = []; // Limpa os serviços selecionados internamente
+  
+            // 1. Recarrega visualmente a lista de serviços para resetar os botões para "ADICIONAR"
+            if (typeof renderizarServicos === "function") {
+                renderizarServicos();
+            }
+  
+            // 2. Mostra novamente a tag <main> com toda a estrutura do site
+            const elementoMain = document.querySelector('main');
+            if (elementoMain) {
+                elementoMain.classList.remove('hidden');
+            }
+  
+            // 3. Esconde o sucesso e volta a mostrar a tela inicial de serviços
             document.getElementById('passo-sucesso').classList.add('hidden');
             document.getElementById('passo-servicos').classList.remove('hidden');
-            document.getElementById('coluna-carrinho').classList.remove('hidden');
-            
-            atualizarCarrinho();
-            renderizarServicos();
+  
+            // 4. Garante que a tela da agenda fique escondida
+            if (document.getElementById('passo-agenda')) {
+                document.getElementById('passo-agenda').classList.add('hidden');
+            }
+  
+            // 5. Atualiza os valores visuais do resumo lateral (que voltará a ficar vazio)
+            atualizarCarrinho(); 
         }
 
         // Inicialização do App
@@ -344,6 +445,22 @@
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
+    </script>
+    <script>
+        // Vais colar aqui o firebaseConfig que copiaste do passo 1
+        const firebaseConfig = {
+            apiKey: "AIzaSyCglNITpBMsiPQyOHRKJ8K10dNoQquxoHE",
+            authDomain: "projeto-barbeiro-c6fe3.firebaseapp.com",
+            projectId: "projeto-barbeiro-c6fe3",
+            storageBucket: "projeto-barbeiro-c6fe3.firebasestorage.app",
+            messagingSenderId: "251548886552",
+            appId: "1:251548886552:web:b2cf3992344300a2e0c56d"
+        };
+
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
     </script>
 </body>
 </html>
