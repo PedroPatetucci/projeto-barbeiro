@@ -8,6 +8,30 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+    /* 1. Remove o efeito cinza nativo de toque dos botões no celular */
+    button, .cursor-pointer {
+        -webkit-tap-highlight-color: transparent !important;
+        outline: none !important;
+    }
+
+    /* 2. Força a cor do texto do input de data no celular */
+    input[type="date"] {
+        color: #111827 !important; 
+        min-height: 44px;         
+        background-color: #ffffff !important;
+    }
+
+    /* 3. Garante que as letras fiquem escuras mesmo antes de selecionar a data */
+    input[type="date"]::-webkit-datetime-edit-text,
+    input[type="date"]::-webkit-datetime-edit-month-field,
+    input[type="date"]::-webkit-datetime-edit-day-field,
+    input[type="date"]::-webkit-datetime-edit-year-field {
+        color: #111827 !important;
+    }
+  </style>
+  
 </head>
 <body class="bg-white font-sans text-gray-900 antialiased min-h-screen flex flex-col justify-between">
 
@@ -57,6 +81,11 @@
       <label class="block text-xs font-medium text-gray-700 mb-1">Seu Endereço Completo *</label>
       <input type="text" id="input-endereco" placeholder="Rua, número, bairro, apto..." class="w-full border border-gray-200 rounded p-2 text-sm focus:outline-none focus:border-amber-500">
     </div>
+
+    <div>   
+        <label class="block text-sm font-medium text-gray-700 mt-3">Seu WhatsApp (com DDD) *</label>
+        <input type="tel" id="input-telefone" placeholder="Ex: 21999999999" class="w-full border p-2 rounded mt-1">
+    </div>
   </div>
 </div>
 
@@ -92,27 +121,36 @@
         </section>
     </main>
 
-    <div id="passo-sucesso" class="hidden fixed inset-0 bg-white flex flex-col items-center justify-center text-center z-50">
-  
-  <div class="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-4">
-    <i data-lucide="check-circle" class="w-10 h-10"></i>
-  </div>
-  
-  <h2 class="text-3xl font-bold mb-2 text-gray-950">Agendamento Confirmado!</h2>
-  <p class="text-gray-500 text-sm mb-6">Seu horário foi reservado com sucesso.</p>
-  
-  <button onclick="reiniciarFluxo()" class="bg-black text-white px-6 py-2 rounded font-medium text-sm hover:bg-gray-800 transition">
-    Novo Agendamento
-  </button>
+<div id="passo-sucesso" class="hidden fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 text-center">
+    
+    <div class="w-full max-w-sm mx-auto flex flex-col items-center justify-center">
+        <div class="flex items-center justify-center text-emerald-500 mb-4 animate-bounce">
+            <svg class="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+        </div>
 
-</div>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Agendamento Confirmado!</h2>
+        <p class="text-gray-600 mb-8 px-4">Seu horário foi reservado com sucesso no sistema.</p>
 
-    <div class="fixed bottom-6 right-6 z-50">
-        <button class="bg-white hover:bg-gray-50 text-gray-800 font-medium px-4 py-2.5 rounded-full shadow-lg border border-gray-200 flex items-center gap-2 text-sm transition-all">
-            <i data-lucide="message-square" class="w-4 h-4"></i>
-            Fale conosco
-        </button>
+        <div class="w-full max-w-xs flex flex-col gap-3 px-2">
+            
+            <a id="btn-whatsapp-sucesso" href="#" target="_blank" 
+               class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 px-4 rounded-xl shadow-md transition duration-200 w-full text-base">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.446L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.863-9.855.001-2.63-1.013-5.101-2.86-6.95a9.753 9.753 0 0 0-6.944-2.836c-5.442 0-9.866 4.42-9.869 9.858-.001 1.702.443 3.361 1.286 4.837l-.999 3.644 3.73-.978z"/>
+                </svg>
+                Confirmar no WhatsApp
+            </a>
+
+            <button onclick="window.location.reload()" 
+                    class="bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3.5 px-4 rounded-xl shadow-sm transition duration-200 w-full text-base">
+                Novo Agendamento
+            </button>
+            
+        </div>
     </div>
+</div>
 
     <script>
         // Banco de dados simulado de serviços (Durações em minutos absolutos)
@@ -311,20 +349,18 @@ if (inputDataEl) {
 
                  // Retorna o botão desativado ou ativo com base na checagem acima
                 return `
-                    <button 
-                        onclick="${horarioBloqueado ? '' : `selecionarHorario('${hora}')`}"
-                        class="p-2 text-sm font-medium rounded-lg text-center transition-all ${
-                            horarioBloqueado 
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed line-through' 
-                                : selecionado 
-                                    ? 'bg-amber-500 text-white shadow-md' 
-                                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                        }"
-                        ${horarioBloqueado ? 'disabled' : ''}
-                    >
-                        ${hora}
-                    </button>
-                `;
+        <button 
+          onclick="${horarioBloqueado ? '' : `selecionarHorario('${hora}')`}"
+          class="p-2 text-sm font-medium rounded-lg text-center transition-all ${
+            horarioBloqueado
+              ? 'bg-red-100 text-red-400 cursor-not-allowed line-through'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }"
+          ${horarioBloqueado ? 'disabled' : ''}
+        >
+          ${hora}
+        </button>
+        `;
             }).join('');
 
             });
@@ -332,21 +368,42 @@ if (inputDataEl) {
 
         function selecionarHorario(hora) {
             horarioSelecionado = hora;
-            gerarHorariosDisponiveis();
-            
+  
+            // 1. Remove a cor amarela de QUALQUER botão de horário que já estava selecionado antes
+            document.querySelectorAll('#grade-horarios button').forEach(btn => {
+                if (!btn.disabled) {
+                    btn.classList.remove('bg-amber-500', 'text-white', 'shadow-md');
+                    btn.classList.add('bg-gray-100', 'text-gray-700');
+                }
+            });
+
+             // 2. Acha o botão exato que foi clicado com base no texto dele e pinta de amarelo
+            const botoes = document.querySelectorAll('#grade-horarios button');
+            botoes.forEach(btn => {
+                if (btn.innerText.trim() === hora.trim()) {
+                    btn.classList.remove('bg-gray-100', 'text-gray-700');
+                    btn.classList.add('bg-amber-500', 'text-white', 'shadow-md');
+                }
+            });
+
+            // Seus códigos que já funcionavam continuam aqui embaixo:
             btnAcaoEl.disabled = false;
             btnAcaoEl.innerText = "Confirmar Agendamento";
-            btnAcaoEl.className = "w-full bg-amber-600 text-white hover:bg-amber-700 font-medium py-3 rounded-lg cursor-pointer transition-all";
+            btnAcaoEl.className = "w-full bg-amber-600 text-white hover:bg-amber-700 font-medium py-3 rounded-lg transition-all text-center block";
         }
 
-function salvarAgendamentoNoFirebase(data, horarioInicio, tempoDuracao, nome, endereco) {
+function salvarAgendamentoNoFirebase(data, horarioInicio, tempoDuracao, nome, endereco, telefone, servicos, valorTotal) {
   // Certifique-se de que a coleção bate com o nome usado no banco ("agendamentos")
   db.collection("agendamentos").add({
-    nome: nome,          // <-- Salva o nome do cliente
-    endereco: endereco,  // <-- Salva o endereço do cliente
+    nome: nome,
+    endereco: endereco,
+    telefone: telefone,   
     data: data,
     horarioInicio: horarioInicio,
     tempoDuracao: tempoDuracao,
+    servicos: servicos,   
+    valorTotal: valorTotal, 
+    status: "pendente",
     criadoEm: firebase.firestore.FieldValue.serverTimestamp()
   })
   .then((docRef) => {
@@ -358,9 +415,9 @@ function salvarAgendamentoNoFirebase(data, horarioInicio, tempoDuracao, nome, en
   });
 }
 
-function avancarPasso() { 
-  // SE O CLIENTE ESTIVER NA TELA DE HORÁRIOS (PASSO 2) E CLICAR EM CONFIRMAR AGENDAMENTO
-  if (passoAtual === 2) { 
+function avancarPasso() {
+  // === SE O CLIENTE ESTIVER NA TELA DE HORÁRIOS (PASSO 2) E CLICAR EM CONFIRMAR AGENDAMENTO ===
+  if (passoAtual === 2) {
     if (!dataSelecionada || !horarioSelecionado) {
       alert("Por favor, selecione uma data e um horário.");
       return;
@@ -368,28 +425,84 @@ function avancarPasso() {
 
     const nomeCliente = document.getElementById('input-nome').value.trim();
     const enderecoCliente = document.getElementById('input-endereco').value.trim();
+    const telefoneCliente = document.getElementById('input-telefone').value.trim().replace(/\D/g, ''); // Remove traços/espaços
 
-    if (!nomeCliente || !enderecoCliente) {
-      alert("Por favor, preencha seu nome e endereço para o atendimento!");
+    if (!nomeCliente || !enderecoCliente || !telefoneCliente) {
+      alert("Por favor, preencha todos os campos!");
       return;
     }
 
-    // Envia os dados para o Firebase
-    salvarAgendamentoNoFirebase(dataSelecionada, horarioSelecionado, tempoTotalAtendimento, nomeCliente, enderecoCliente);
-    
-    // === SOLUÇÃO CRUCIAL: Esconde toda a tag <main> (Esconde a agenda e o resumo lateral) ===
+    // Mapeia os serviços selecionados com segurança
+    let nomesServicosSelecionados = [];
+    if (typeof carrinho !== 'undefined' && typeof servicos !== 'undefined') {
+        nomesServicosSelecionados = carrinho.map(id => {
+          const s = servicos.find(item => item.id === id);
+          return s ? s.nome : "";
+        }).filter(nome => nome !== "");
+    }
+
+    // Pega o valor total (garante que se a variável sumiu, envia 0)
+    const valorFinal = (typeof valorTotalAtendimento !== 'undefined') ? valorTotalAtendimento : 0;
+    const tempoFinal = (typeof tempoTotalAtendimento !== 'undefined') ? tempoTotalAtendimento : 30;
+
+    // Envia os dados para o Firebase com os 8 parâmetros na ordem correta:
+    salvarAgendamentoNoFirebase(
+      dataSelecionada, 
+      horarioSelecionado, 
+      tempoFinal, 
+      nomeCliente, 
+      enderecoCliente,
+      telefoneCliente,          // 6º parâmetro
+      nomesServicosSelecionados, // 7º parâmetro
+      valorFinal                // 8º parâmetro
+    );
+
+    // Esconde a tag <main>
     const elementoMain = document.querySelector('main');
     if (elementoMain) {
       elementoMain.classList.add('hidden');
     }
-    
-    // Mostra o ecrã de sucesso centralizado
+
+    // Mostra a tela de sucesso e inicia a integração com o WhatsApp
     const telaSucesso = document.getElementById('passo-sucesso');
     if (telaSucesso) {
       telaSucesso.classList.remove('hidden');
+      
+      const numeroBarbearia = "5521977447894"; // <-- Insira o seu número aqui!
+
+      const textoMensagem = `Olá! Gostaria de avisar que realizei um agendamento:\n\n` +
+                            `📅 *Data:* ${dataSelecionada.split('-').reverse().join('/')}\n` +
+                            `⏰ *Horário:* ${horarioSelecionado}\n` +
+                            `💇‍♂️ *Serviço(s):* ${nomesServicosSelecionados.join(', ')}\n`;
+
+      const linkWhatsapp = `https://api.whatsapp.com/send?phone=${numeroBarbearia}&text=${encodeURIComponent(textoMensagem)}`;
+
+        const btnWhats = document.getElementById('btn-whatsapp-sucesso');
+        if (btnWhats) {
+            btnWhats.href = linkWhatsapp;
+        }
     }
-    return; 
+    return;
   }
+
+  // === SE ELE ESTIVER NA TELA DE SERVIÇOS (PASSO 1) E CLICAR EM AVANÇAR ===
+  if (passoAtual === 1) {
+    passoAtual++;
+    
+    const passoServicos = document.getElementById('passo-servicos');
+    if (passoServicos) passoServicos.classList.add('hidden');
+    
+    const passoAgenda = document.getElementById('passo-agenda');
+    if (passoAgenda) passoAgenda.classList.remove('hidden');
+    
+    gerarHorariosDisponiveis();
+    
+    if (typeof btnAcaoEl !== 'undefined') {
+        btnAcaoEl.innerText = "Selecione um Horário";
+        btnAcaoEl.disabled = true;
+    }
+  }
+}
   
   // SE ELE ESTIVER NA TELA DE SERVIÇOS (PASSO 1)...
   if (passoAtual === 1) {
@@ -400,7 +513,7 @@ function avancarPasso() {
     btnAcaoEl.innerText = "Selecione um Horário";
     btnAcaoEl.disabled = true; 
   }
-}
+
 
         function voltarParaServicos() {
             passoAtual = 1;
@@ -445,7 +558,28 @@ function avancarPasso() {
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
+
+        // Garante o reset visual ao dar F5 na página
+window.addEventListener('DOMContentLoaded', () => {
+    // 1. Força a variável a começar no 1
+    passoAtual = 1; 
+
+    // 2. Garante que os serviços apareçam
+    const passoServicos = document.getElementById('passo-servicos');
+    if (passoServicos) passoServicos.classList.remove('hidden');
+
+    // 3. Garante que a agenda e o sucesso iniciem escondidos
+    const passoAgenda = document.getElementById('passo-agenda');
+    if (passoAgenda) passoAgenda.classList.add('hidden');
+
+    const passoSucesso = document.getElementById('passo-sucesso');
+    if (passoSucesso) passoSucesso.classList.add('hidden');
+
+    // 4. Executa a renderização dos serviços da sua linha 173
+    renderizarServicos(); 
+});
     </script>
+
     <script>
         // Vais colar aqui o firebaseConfig que copiaste do passo 1
         const firebaseConfig = {
