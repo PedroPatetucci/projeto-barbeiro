@@ -1,600 +1,768 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agendamento Barbearia</title>
+    <link rel="icon" type="image/jpeg" href="logo.jpeg" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
-    /* 1. Remove o efeito cinza nativo de toque dos botões no celular */
-    button, .cursor-pointer {
+      /* 1. Remove o efeito cinza nativo de toque dos botões no celular */
+      button,
+      .cursor-pointer {
         -webkit-tap-highlight-color: transparent !important;
         outline: none !important;
-    }
+      }
 
-    /* 2. Força a cor do texto do input de data no celular */
-    input[type="date"] {
-        color: #111827 !important; 
-        min-height: 44px;         
-        background-color: #ffffff !important;
-    }
-
-    /* 3. Garante que as letras fiquem escuras mesmo antes de selecionar a data */
-    input[type="date"]::-webkit-datetime-edit-text,
-    input[type="date"]::-webkit-datetime-edit-month-field,
-    input[type="date"]::-webkit-datetime-edit-day-field,
-    input[type="date"]::-webkit-datetime-edit-year-field {
+      /* 2. Força a cor do texto do input de data no celular */
+      input[type="date"] {
         color: #111827 !important;
-    }
-  </style>
-  
-</head>
-<body class="bg-white font-sans text-gray-900 antialiased min-h-screen flex flex-col justify-between">
+        min-height: 44px;
+        background-color: #ffffff !important;
+      }
 
-    <header class="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto w-full border-b border-gray-50">
-        <div class="flex items-center gap-3 cursor-pointer" onclick="voltarParaServicos()">
-            <div class="w-10 h-10 rounded-full border-2 border-amber-600 flex items-center justify-center bg-white shadow-inner">
-                <span class="text-lg font-extrabold tracking-tighter text-amber-700">RS</span>
-            </div>
-        </div>
+      /* 3. Garante que as letras fiquem escuras mesmo antes de selecionar a data */
+      input[type="date"]::-webkit-datetime-edit-text,
+      input[type="date"]::-webkit-datetime-edit-month-field,
+      input[type="date"]::-webkit-datetime-edit-day-field,
+      input[type="date"]::-webkit-datetime-edit-year-field {
+        color: #111827 !important;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-white font-sans text-gray-900 antialiased min-h-screen flex flex-col justify-between"
+  >
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-40 w-full">
+      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-start">
+        <!-- Logo posicionada perfeitamente no canto esquerdo -->
+        <img
+          src="logo.jpeg"
+          alt="Logo RS Cortes"
+          class="w-12 h-12 rounded-full object-cover"
+        />
+      </div>
     </header>
 
-    <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 md:py-8 flex flex-col lg:flex-row gap-8 lg:gap-12 flex-1 justify-center">
-        
-        <section id="coluna-carrinho" class="w-full lg:w-96">
-            
-            <div id="passo-servicos">
-                <h2 class="text-2xl font-bold mb-6 text-gray-950">Selecione os Serviços</h2>
-                <div id="lista-servicos" class="divide-y divide-gray-100">
-                    </div>
+    <main
+      class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 md:py-8 flex flex-col lg:flex-row gap-8 lg:gap-12 flex-1 justify-center"
+    >
+      <section id="coluna-carrinho" class="w-full lg:w-96">
+        <div id="passo-servicos">
+          <h2 class="text-2xl font-bold mb-6 text-gray-950">
+            Selecione os Serviços
+          </h2>
+          <div id="lista-servicos" class="divide-y divide-gray-100"></div>
+        </div>
+
+        <div id="passo-agenda" class="hidden">
+          <button
+            onclick="voltarParaServicos()"
+            class="flex items-center gap-2 text-sm text-gray-500 mb-4"
+          >
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar para
+            serviços
+          </button>
+
+          <h2 class="text-2xl font-bold mb-2 text-gray-900">
+            Escolha o Dia e Horário
+          </h2>
+          <p class="text-sm text-gray-500 mb-6">
+            Selecione uma data para ver os horários disponíveis.
+          </p>
+
+          <div class="mb-8">
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >Data do Atendimento:</label
+            >
+            <input
+              type="date"
+              id="input-data"
+              class="border border-gray-200 rounded p-2"
+            />
+          </div>
+
+          <div id="grade-horarios" class="grid grid-cols-3 gap-2 mb-8"></div>
+
+          <div
+            class="space-y-4 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-left"
+          >
+            <h3 class="text-md font-semibold text-gray-900">
+              Dados para o Atendimento em Domicílio
+            </h3>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1"
+                >Seu Nome Completo *</label
+              >
+              <input
+                type="text"
+                id="input-nome"
+                placeholder="Ex: João Silva"
+                class="w-full border border-gray-200 rounded p-2 text-sm focus:outline-none focus:border-amber-500"
+              />
             </div>
 
-            <div id="passo-agenda" class="hidden">
-  <button onclick="voltarParaServicos()" class="flex items-center gap-2 text-sm text-gray-500 mb-4">
-    <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar para serviços
-  </button>
-
-  <h2 class="text-2xl font-bold mb-2 text-gray-900">Escolha o Dia e Horário</h2>
-  <p class="text-sm text-gray-500 mb-6">Selecione uma data para ver os horários disponíveis.</p>
-
-  <div class="mb-8">
-    <label class="block text-sm font-medium text-gray-700 mb-2">Data do Atendimento:</label>
-    <input type="date" id="input-data" class="border border-gray-200 rounded p-2">
-  </div>
-
-  <div id="grade-horarios" class="grid grid-cols-3 gap-2 mb-8">
-    </div>
-
-  <div class="space-y-4 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-left">
-    <h3 class="text-md font-semibold text-gray-900">Dados para o Atendimento em Domicílio</h3>
-    
-    <div>
-      <label class="block text-xs font-medium text-gray-700 mb-1">Seu Nome Completo *</label>
-      <input type="text" id="input-nome" placeholder="Ex: João Silva" class="w-full border border-gray-200 rounded p-2 text-sm focus:outline-none focus:border-amber-500">
-    </div>
-
-    <div>
-      <label class="block text-xs font-medium text-gray-700 mb-1">Seu Endereço Completo *</label>
-      <input type="text" id="input-endereco" placeholder="Rua, número, bairro, apto..." class="w-full border border-gray-200 rounded p-2 text-sm focus:outline-none focus:border-amber-500">
-    </div>
-
-    <div>   
-        <label class="block text-sm font-medium text-gray-700 mt-3">Seu WhatsApp (com DDD) *</label>
-        <input type="tel" id="input-telefone" placeholder="Ex: 21999999999" class="w-full border p-2 rounded mt-1">
-    </div>
-  </div>
-</div>
-
-        </section>
-
-        <section id="coluna-carrinho" class="w-full md:w-96">
-            <div class="border border-gray-100 rounded-xl p-6 bg-white shadow-sm sticky top-6">
-                <h2 class="text-lg font-semibold mb-4 text-gray-900">Resumo do Agendamento</h2>
-                
-                <div id="carrinho-container" class="min-h-[100px] flex flex-col justify-center">
-                    <div id="carrinho-vazio" class="text-center py-6 text-gray-400 border border-dashed border-gray-200 rounded-lg p-4 text-sm">
-                        Nenhum serviço adicionado ainda
-                    </div>
-                    
-                    <ul id="carrinho-itens" class="hidden space-y-3 mb-4 max-h-60 overflow-y-auto pr-1"></ul>
-
-                    <div id="carrinho-totais" class="hidden border-t border-gray-100 pt-4 mb-6 space-y-2">
-                        <div class="flex justify-between text-sm text-gray-500">
-                            <span>Tempo estimado:</span>
-                            <span id="tempo-total" class="font-medium text-gray-800">0 min</span>
-                        </div>
-                        <div class="flex justify-between text-base font-bold text-gray-900">
-                            <span>Valor total:</span>
-                            <span id="valor-total">R$ 0,00</span>
-                        </div>
-                    </div>
-                </div>
-
-                <button id="btn-acao" disabled onclick="avancarPasso()" class="w-full bg-gray-100 text-gray-400 font-medium py-3 rounded-lg cursor-not-allowed transition-all duration-200">
-                    Avançar
-                </button>
+            <div>
+              <label class="block text-xs font-medium text-gray-700 mb-1"
+                >Seu Endereço Completo *</label
+              >
+              <input
+                type="text"
+                id="input-endereco"
+                placeholder="Rua, número, bairro, apto..."
+                class="w-full border border-gray-200 rounded p-2 text-sm focus:outline-none focus:border-amber-500"
+              />
             </div>
-        </section>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mt-3"
+                >Seu WhatsApp (com DDD) *</label
+              >
+              <input
+                type="tel"
+                id="input-telefone"
+                placeholder="Ex: 21999999999"
+                class="w-full border p-2 rounded mt-1"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="coluna-carrinho" class="w-full md:w-96">
+        <div
+          class="border border-gray-100 rounded-xl p-6 bg-white shadow-sm sticky top-6"
+        >
+          <h2 class="text-lg font-semibold mb-4 text-gray-900">
+            Resumo do Agendamento
+          </h2>
+
+          <div
+            id="carrinho-container"
+            class="min-h-[100px] flex flex-col justify-center"
+          >
+            <div
+              id="carrinho-vazio"
+              class="text-center py-6 text-gray-400 border border-dashed border-gray-200 rounded-lg p-4 text-sm"
+            >
+              Nenhum serviço adicionado ainda
+            </div>
+
+            <ul
+              id="carrinho-itens"
+              class="hidden space-y-3 mb-4 max-h-60 overflow-y-auto pr-1"
+            ></ul>
+
+            <div
+              id="carrinho-totais"
+              class="hidden border-t border-gray-100 pt-4 mb-6 space-y-2"
+            >
+              <div class="flex justify-between text-sm text-gray-500">
+                <span>Tempo estimado:</span>
+                <span id="tempo-total" class="font-medium text-gray-800"
+                  >0 min</span
+                >
+              </div>
+              <div
+                class="flex justify-between text-base font-bold text-gray-900"
+              >
+                <span>Valor total:</span>
+                <span id="valor-total">R$ 0,00</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            id="btn-acao"
+            disabled
+            onclick="avancarPasso()"
+            class="w-full bg-gray-100 text-gray-400 font-medium py-3 rounded-lg cursor-not-allowed transition-all duration-200"
+          >
+            Avançar
+          </button>
+        </div>
+      </section>
     </main>
 
-<div id="passo-sucesso" class="hidden fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 text-center">
-    
-    <div class="w-full max-w-sm mx-auto flex flex-col items-center justify-center">
-        <div class="flex items-center justify-center text-emerald-500 mb-4 animate-bounce">
-            <svg class="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
+    <div
+      id="passo-sucesso"
+      class="hidden fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 text-center"
+    >
+      <div
+        class="w-full max-w-sm mx-auto flex flex-col items-center justify-center"
+      >
+        <div
+          class="flex items-center justify-center text-emerald-500 mb-4 animate-bounce"
+        >
+          <svg
+            class="w-20 h-20"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
         </div>
 
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">Agendamento Confirmado!</h2>
-        <p class="text-gray-600 mb-8 px-4">Seu horário foi reservado com sucesso no sistema.</p>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">
+          Agendamento Confirmado!
+        </h2>
+        <p class="text-gray-600 mb-8 px-4">
+          Seu horário foi reservado com sucesso no sistema.
+        </p>
 
         <div class="w-full max-w-xs flex flex-col gap-3 px-2">
-            
-            <a id="btn-whatsapp-sucesso" href="#" target="_blank" 
-               class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 px-4 rounded-xl shadow-md transition duration-200 w-full text-base">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.446L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.863-9.855.001-2.63-1.013-5.101-2.86-6.95a9.753 9.753 0 0 0-6.944-2.836c-5.442 0-9.866 4.42-9.869 9.858-.001 1.702.443 3.361 1.286 4.837l-.999 3.644 3.73-.978z"/>
-                </svg>
-                Confirmar no WhatsApp
-            </a>
+          <a
+            id="btn-whatsapp-sucesso"
+            href="#"
+            target="_blank"
+            class="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 px-4 rounded-xl shadow-md transition duration-200 w-full text-base"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.739-1.446L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.863-9.855.001-2.63-1.013-5.101-2.86-6.95a9.753 9.753 0 0 0-6.944-2.836c-5.442 0-9.866 4.42-9.869 9.858-.001 1.702.443 3.361 1.286 4.837l-.999 3.644 3.73-.978z"
+              />
+            </svg>
+            Confirmar no WhatsApp
+          </a>
 
-            <button onclick="window.location.reload()" 
-                    class="bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3.5 px-4 rounded-xl shadow-sm transition duration-200 w-full text-base">
-                Novo Agendamento
-            </button>
-            
+          <button
+            onclick="window.location.reload()"
+            class="bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3.5 px-4 rounded-xl shadow-sm transition duration-200 w-full text-base"
+          >
+            Novo Agendamento
+          </button>
         </div>
+      </div>
     </div>
-</div>
 
     <script>
-        // Banco de dados simulado de serviços (Durações em minutos absolutos)
-        const servicos = [
-            { id: 1, nome: "Máquina", preco: 60.00, tempo: 60, txtTempo: "1 hora" },
-            { id: 2, nome: "Máquina + Tesoura", preco: 80.00, tempo: 120, txtTempo: "2 horas" },
-            { id: 3, nome: "Sobrancelha", preco: 15.00, tempo: 10, txtTempo: "10 min" },
-            { id: 4, nome: "Pezinho", preco: 20.00, tempo: 30, txtTempo: "30 min" },
-            { id: 5, nome: "Barba", preco: 40.00, tempo: 50, txtTempo: "50 min" },
-            { id: 6, nome: "Tesoura", preco: 60.00, tempo: 60, txtTempo: "1 hora" }
-        ];
+      const servicos = [
+        { nome: "Máquina + Tesoura", preco: 55, duracao: 40 },
+        { nome: "Máquina", preco: 50, duracao: 30 },
+        { nome: "Sobrancelha", preco: 5, duracao: 5 },
+        { nome: "Cavanhaque", preco: 15, duracao: 15 },
+        { nome: "Barba", preco: 20, duracao: 15 },
+        { nome: "Tesoura", preco: 50, duracao: 30 },
+        { nome: "Pezinho", preco: 20, duracao: 5 },
+        {
+          nome: "Combo Máquina + Tesoura + Barba + Sobrancelha",
+          preco: 70,
+          duracao: 60,
+        },
+      ];
 
-        // Ocupações fixas: Simula outro cliente das 13:00 às 14:00 (dois blocos de 30 minutos)
-        const horariosOcupadosSimulados = [""]; 
+      // Ocupações fixas: Simula outro cliente das 13:00 às 14:00 (dois blocos de 30 minutos)
+      const horariosOcupadosSimulados = [""];
 
-        // Estado da aplicação
-        let carrinho = [];
-        let passoAtual = 1; 
-        let dataSelecionada = "";
-        let horarioSelecionado = "";
-        let tempoTotalAtendimento = 0;
-        let valorTotalAtendimento = 0;
+      // Estado da aplicação
+      let carrinho = [];
+      let passoAtual = 1;
+      let dataSelecionada = "";
+      let horarioSelecionado = "";
+      let tempoTotalAtendimento = 0;
+      let valorTotalAtendimento = 0;
 
-        // Elementos HTML
-        const listaServicosEl = document.getElementById('lista-servicos');
-        const carrinhoVazioEl = document.getElementById('carrinho-vazio');
-        const carrinhoItensEl = document.getElementById('carrinho-itens');
-        const carrinhoTotaisEl = document.getElementById('carrinho-totais');
-        const tempoTotalEl = document.getElementById('tempo-total');
-        const valorTotalEl = document.getElementById('valor-total');
-        const btnAcaoEl = document.getElementById('btn-acao');
-        const inputDataEl = document.getElementById('input-data');
+      // Elementos HTML
+      const listaServicosEl = document.getElementById("lista-servicos");
+      const carrinhoVazioEl = document.getElementById("carrinho-vazio");
+      const carrinhoItensEl = document.getElementById("carrinho-itens");
+      const carrinhoTotaisEl = document.getElementById("carrinho-totais");
+      const tempoTotalEl = document.getElementById("tempo-total");
+      const valorTotalEl = document.getElementById("valor-total");
+      const btnAcaoEl = document.getElementById("btn-acao");
+      const inputDataEl = document.getElementById("input-data");
 
-        // Configura a data mínima do calendário para HOJE
-        if(inputDataEl) {
-            const hoje = new Date().toISOString().split('T')[0];
-            inputDataEl.min = hoje;
-        }
+      // Configura a data mínima do calendário para HOJE
+      if (inputDataEl) {
+        const hoje = new Date().toISOString().split("T")[0];
+        inputDataEl.min = hoje;
+      }
 
-        // Adicione isso logo após a linha 149 do seu arquivo atual
-if (inputDataEl) {
-  inputDataEl.addEventListener('change', (e) => {
-    dataSelecionada = e.target.value; // Atualiza a variável com a data escolhida
-    horarioSelecionado = null;        // Limpa o horário anterior para não bugar
-    
-    // Reseta o botão principal
-    btnAcaoEl.disabled = true;
-    btnAcaoEl.innerText = "Selecione um Horário";
-    
-    console.log("Nova data selecionada pelo usuário:", dataSelecionada);
-    
-    // Força o sistema a buscar no Firebase os horários ocupados desse novo dia
-    gerarHorariosDisponiveis(); 
-  });
-}
+      // Adicione isso logo após a linha 149 do seu arquivo atual
+      if (inputDataEl) {
+        inputDataEl.addEventListener("change", (e) => {
+          dataSelecionada = e.target.value; // Atualiza a variável com a data escolhida
+          horarioSelecionado = null; // Limpa o horário anterior para não bugar
 
-        // Renderiza serviços
-        function renderizarServicos() {
-            if (!listaServicosEl) return;
-            listaServicosEl.innerHTML = servicos.map(s => {
-                const noCarrinho = carrinho.includes(s.id);
-                return `
-                    <div class="py-5 flex justify-between items-center group cursor-pointer" onclick="alternarItemCarrinho(${s.id})">
-                        <div>
-                            <h3 class="font-medium text-gray-900 group-hover:text-amber-600 transition-colors">${s.nome}</h3>
-                            <p class="text-sm text-gray-500 mt-1">R$ ${s.preco.toFixed(2).replace('.', ',')} &bull; ${s.txtTempo}</p>
-                        </div>
-                        <span class="text-xs font-semibold uppercase tracking-wider px-3 py-1.5 rounded-md transition-all ${
-                            noCarrinho ? 'bg-amber-100 text-amber-800' : 'bg-gray-50 text-gray-600 group-hover:bg-gray-100'
-                        }">${noCarrinho ? 'Selecionado' : 'Adicionar'}</span>
-                    </div>
-                `;
-            }).join('');
-        }
+          // Reseta o botão principal
+          btnAcaoEl.disabled = true;
+          btnAcaoEl.innerText = "Selecione um Horário";
 
-        function alternarItemCarrinho(id) {
-            if (passoAtual !== 1) return; 
-            const index = carrinho.indexOf(id);
-            if (index > -1) carrinho.splice(index, 1);
-            else carrinho.push(id);
-            atualizarCarrinho();
-            renderizarServicos();
-        }
+          console.log("Nova data selecionada pelo usuário:", dataSelecionada);
 
-        function atualizarCarrinho() {
-            if (carrinho.length === 0) {
-                carrinhoVazioEl.classList.remove('hidden');
-                carrinhoItensEl.classList.add('hidden');
-                carrinhoTotaisEl.classList.add('hidden');
-                btnAcaoEl.disabled = true;
-                btnAcaoEl.innerText = "Avançar";
-                btnAcaoEl.className = "w-full bg-gray-100 text-gray-400 font-medium py-3 rounded-lg cursor-not-allowed";
-                return;
+          // Força o sistema a buscar no Firebase os horários ocupados desse novo dia
+          gerarHorariosDisponiveis();
+        });
+      }
+
+      function renderizarServicos() {
+        if (!listaServicosEl) return;
+        listaServicosEl.innerHTML = servicos
+          .map((s) => {
+            const noCarrinho = carrinho.includes(s.nome);
+
+            // Lógica para formatar o tempo de forma amigável
+            let textoTempo = `${s.duracao} minutos`;
+            if (s.duracao === 60) {
+              textoTempo = "1 hora";
+            } else if (s.duracao > 60) {
+              const horas = Math.floor(s.duracao / 60);
+              const minutos = s.duracao % 60;
+              textoTempo =
+                minutos > 0 ? `${horas}h ${minutos}min` : `${horas} hora(s)`;
             }
 
-            carrinhoVazioEl.classList.add('hidden');
-            carrinhoItensEl.classList.remove('hidden');
-            carrinhoTotaisEl.classList.remove('hidden');
+            return `
+                    <div class="py-5 flex justify-between items-center group cursor-pointer" onclick="alternarItemCarrinho('${s.nome}')">
+                        <div>
+                            <h3 class="font-medium text-gray-900 group-hover:text-amber-600 transition-colors">${s.nome}</h3>
+                            <p class="text-sm text-gray-500 mt-1">R$ ${s.preco.toFixed(2).replace(".", ",")} &bull; ${textoTempo}</p>
+                        </div>
+                        <span class="text-xs font-semibold uppercase tracking-wider px-3 py-1.5 rounded-md transition-all ${
+                          noCarrinho
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-gray-50 text-gray-600 group-hover:bg-gray-100"
+                        }">${noCarrinho ? "Selecionado" : "Adicionar"}</span>
+                    </div>
+                `;
+          })
+          .join("");
+      }
 
-            valorTotalAtendimento = 0;
-            tempoTotalAtendimento = 0;
-            let itensHTML = '';
+      function alternarItemCarrinho(id) {
+        if (passoAtual !== 1) return;
+        const index = carrinho.indexOf(id);
+        if (index > -1) carrinho.splice(index, 1);
+        else carrinho.push(id);
+        atualizarCarrinho();
+        renderizarServicos();
+      }
 
-            carrinho.forEach(id => {
-                const item = servicos.find(s => s.id === id);
-                if (item) {
-                    valorTotalAtendimento += item.preco;
-                    tempoTotalAtendimento += item.tempo;
-                    // Adicionado o botão de lixeira que chama a função alternarItemCarrinho
-                    itensHTML += `
-                        <li class="flex justify-between items-center text-sm bg-gray-50 p-2.5 rounded-lg border border-gray-100 group">
-                            <div class="flex-1 pr-2">
-                                <p class="font-medium text-gray-800">${item.nome}</p>
-                                <span class="font-semibold text-gray-900 text-xs">R$ ${item.preco.toFixed(2).replace('.', ',')}</span>
-                            </div>
-                            <button onclick="alternarItemCarrinho(${item.id})" class="text-gray-400 hover:text-red-600 p-1 rounded transition-colors" title="Remover serviço">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+      function atualizarCarrinho() {
+        if (carrinho.length === 0) {
+          carrinhoVazioEl.classList.remove("hidden");
+          carrinhoItensEl.classList.add("hidden");
+          carrinhoTotaisEl.classList.add("hidden");
+          btnAcaoEl.disabled = true;
+          btnAcaoEl.innerText = "Avançar";
+          btnAcaoEl.className =
+            "w-full bg-gray-100 text-gray-400 font-medium py-3 rounded-lg cursor-not-allowed";
+          return;
+        }
+
+        carrinhoVazioEl.classList.add("hidden");
+        carrinhoItensEl.classList.remove("hidden");
+        carrinhoTotaisEl.classList.remove("hidden");
+
+        valorTotalAtendimento = 0;
+        tempoTotalAtendimento = 0;
+        let itensHTML = "";
+
+        carrinho.forEach((id) => {
+          const item = servicos.find((s) => s.nome === id);
+          if (item) {
+            valorTotalAtendimento += item.preco;
+            tempoTotalAtendimento += item.duracao;
+            itensHTML += `
+                        <li class="flex justify-between items-center text-sm bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                            <div class="flex flex-1 pr-2 justify-between items-center">
+                                <span class="font-medium text-gray-900">${item.nome}</span>
+                                <span class="text-gray-500 ml-2">R$ ${item.preco.toFixed(2).replace(".", ",")}</span>
+                             </div>
+                            <button onclick="alternarItemCarrinho('${item.nome}')" class="text-gray-400 hover:text-red-500 p-1 transition-colors" title="Remover serviço">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                             </button>
                         </li>
                     `;
-                }
+          }
+        });
+
+        carrinhoItensEl.innerHTML = itensHTML;
+
+        // Recarrega os ícones do Lucide para desenhar a lixeira nova na tela
+        if (typeof lucide !== "undefined") {
+          lucide.createIcons();
+        }
+
+        // Exibição amigável do tempo estimado
+        tempoTotalEl.innerText =
+          tempoTotalAtendimento >= 60
+            ? `${Math.floor(tempoTotalAtendimento / 60)}h ${tempoTotalAtendimento % 60 > 0 ? (tempoTotalAtendimento % 60) + "min" : ""}`.trim()
+            : `${tempoTotalAtendimento} min`;
+
+        valorTotalEl.innerText = `R$ ${valorTotalAtendimento.toFixed(2).replace(".", ",")}`;
+
+        if (passoAtual === 1) {
+          btnAcaoEl.disabled = false;
+          btnAcaoEl.innerText = "Escolher Dia e Horário";
+          btnAcaoEl.className =
+            "w-full bg-black text-white hover:bg-gray-900 font-medium py-3 rounded-lg cursor-pointer transition-all";
+        }
+      }
+
+      function converterParaMinutos(horarioStr) {
+        const [horas, minutos] = horarioStr.split(":").map(Number);
+        return horas * 60 + minutos;
+      }
+
+      function gerarHorariosDisponiveis() {
+        dataSelecionada = inputDataEl.value;
+        const gradeEl = document.getElementById("grade-horarios");
+        if (!gradeEl) return;
+
+        if (!dataSelecionada) {
+          gradeEl.innerHTML = `<p class="text-sm text-gray-400 col-span-full">Por favor, selecione uma data.</p>`;
+          return;
+        }
+
+        // 1. Buscamos todos os agendamentos daquela data específica no Firebase
+        db.collection("agendamentos")
+          .where("data", "==", dataSelecionada)
+          .get()
+          .then((querySnapshot) => {
+            let agendamentosDoDia = [];
+
+            querySnapshot.forEach((doc) => {
+              agendamentosDoDia.push(doc.data());
             });
 
-            carrinhoItensEl.innerHTML = itensHTML;
-            
-            // Recarrega os ícones do Lucide para desenhar a lixeira nova na tela
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
-            }
-            
-            // Exibição amigável do tempo estimado
-            tempoTotalEl.innerText = tempoTotalAtendimento >= 60 
-                ? `${Math.floor(tempoTotalAtendimento / 60)}h ${tempoTotalAtendimento % 60 > 0 ? (tempoTotalAtendimento % 60) + 'min' : ''}`.trim()
-                : `${tempoTotalAtendimento} min`;
-                
-            valorTotalEl.innerText = `R$ ${valorTotalAtendimento.toFixed(2).replace('.', ',')}`;
+            // 2. Montamos a lista de horários de trabalho
+            const horariosTrabalho = [
+              "09:00",
+              "10:00",
+              "11:00",
+              "12:00",
+              "13:00",
+              "14:00",
+              "15:00",
+              "16:00",
+              "17:00",
+              "18:00",
+              "19:00",
+              "20:00",
+            ];
 
-            if (passoAtual === 1) {
-                btnAcaoEl.disabled = false;
-                btnAcaoEl.innerText = "Escolher Dia e Horário";
-                btnAcaoEl.className = "w-full bg-black text-white hover:bg-gray-900 font-medium py-3 rounded-lg cursor-pointer transition-all";
-            }
-        }
+            // 3. Renderizamos os botões aplicando a sua lógica matemática de bloqueio
+            gradeEl.innerHTML = horariosTrabalho
+              .map((hora) => {
+                let horarioBloqueado = false;
+                const inicioProposto = converterParaMinutos(hora);
+                const terminoProposto = inicioProposto + tempoTotalAtendimento;
 
-        function converterParaMinutos(horarioStr) {
-            const [horas, minutos] = horarioStr.split(':').map(Number);
-            return (horas * 60) + minutos;
-        }
-
-        function gerarHorariosDisponiveis() {
-            dataSelecionada = inputDataEl.value;
-            const gradeEl = document.getElementById('grade-horarios');
-            if (!gradeEl) return;
-
-            if (!dataSelecionada) {
-                gradeEl.innerHTML = `<p class="text-sm text-gray-400 col-span-full">Por favor, selecione uma data.</p>`;
-                return;
-            }
-
-            // 1. Buscamos todos os agendamentos daquela data específica no Firebase
-            db.collection("agendamentos").where("data", "==", dataSelecionada).get()
-            .then((querySnapshot) => {
-                let agendamentosDoDia = [];
-      
-                querySnapshot.forEach((doc) => {
-                    agendamentosDoDia.push(doc.data());
-                });
-
-                // 2. Montamos a lista de horários de trabalho
-                const horariosTrabalho = [
-                    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-                    "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-                    "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-                    "18:00", "18:30", "19:00", "19:30", "20:00", "20:30"
-                ];
-
-                // 3. Renderizamos os botões aplicando a sua lógica matemática de bloqueio
-                gradeEl.innerHTML = horariosTrabalho.map(hora => {
-                    let horarioBloqueado = false;
-                    const inicioProposto = converterParaMinutos(hora);
-                    const terminoProposto = inicioProposto + tempoTotalAtendimento;
-
-                 // VALIDAÇÃO CONTRA O BANCO DE DADOS:
+                // VALIDAÇÃO CONTRA O BANCO DE DADOS:
                 // O horário do loop passa por cada agendamento real que veio do Firebase
-                agendamentosDoDia.forEach(agendamento => {
-                    const inicioOcupado = converterParaMinutos(agendamento.horarioInicio);
-                    const terminoOcupado = inicioOcupado + agendamento.tempoDuracao;
+                agendamentosDoDia.forEach((agendamento) => {
+                  const inicioOcupado = converterParaMinutos(
+                    agendamento.horarioInicio,
+                  );
+                  const terminoOcupado =
+                    inicioOcupado + agendamento.tempoDuracao;
 
-                    // Se o horário proposto colidir com o período do agendamento existente, bloqueia!
-                    if (inicioProposto < terminoOcupado && terminoProposto > inicioOcupado) {
-                        horarioBloqueado = true;
-                    }
+                  // Se o horário proposto colidir com o período do agendamento existente, bloqueia!
+                  if (
+                    inicioProposto < terminoOcupado &&
+                    terminoProposto > inicioOcupado
+                  ) {
+                    horarioBloqueado = true;
+                  }
                 });
 
                 const selecionado = horarioSelecionado === hora;
 
-                 // Retorna o botão desativado ou ativo com base na checagem acima
+                // Retorna o botão desativado ou ativo com base na checagem acima
                 return `
         <button 
-          onclick="${horarioBloqueado ? '' : `selecionarHorario('${hora}')`}"
+          onclick="${horarioBloqueado ? "" : `selecionarHorario('${hora}')`}"
           class="p-2 text-sm font-medium rounded-lg text-center transition-all ${
             horarioBloqueado
-              ? 'bg-red-100 text-red-400 cursor-not-allowed line-through'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? "bg-red-100 text-red-400 cursor-not-allowed line-through"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
           }"
-          ${horarioBloqueado ? 'disabled' : ''}
+          ${horarioBloqueado ? "disabled" : ""}
         >
           ${hora}
         </button>
         `;
-            }).join('');
+              })
+              .join("");
+          });
+      }
 
-            });
+      function selecionarHorario(hora) {
+        horarioSelecionado = hora;
+
+        // 1. Remove a cor amarela de QUALQUER botão de horário que já estava selecionado antes
+        document.querySelectorAll("#grade-horarios button").forEach((btn) => {
+          if (!btn.disabled) {
+            btn.classList.remove("bg-amber-500", "text-white", "shadow-md");
+            btn.classList.add("bg-gray-100", "text-gray-700");
+          }
+        });
+
+        // 2. Acha o botão exato que foi clicado com base no texto dele e pinta de amarelo
+        const botoes = document.querySelectorAll("#grade-horarios button");
+        botoes.forEach((btn) => {
+          if (btn.innerText.trim() === hora.trim()) {
+            btn.classList.remove("bg-gray-100", "text-gray-700");
+            btn.classList.add("bg-amber-500", "text-white", "shadow-md");
+          }
+        });
+
+        // Seus códigos que já funcionavam continuam aqui embaixo:
+        btnAcaoEl.disabled = false;
+        btnAcaoEl.innerText = "Confirmar Agendamento";
+        btnAcaoEl.className =
+          "w-full bg-amber-600 text-white hover:bg-amber-700 font-medium py-3 rounded-lg transition-all text-center block";
+      }
+
+      function salvarAgendamentoNoFirebase(
+        data,
+        horarioInicio,
+        tempoDuracao,
+        nome,
+        endereco,
+        telefone,
+        servicos,
+        valorTotal,
+      ) {
+        // Certifique-se de que a coleção bate com o nome usado no banco ("agendamentos")
+        db.collection("agendamentos")
+          .add({
+            nome: nome,
+            endereco: endereco,
+            telefone: telefone,
+            data: data,
+            horarioInicio: horarioInicio,
+            tempoDuracao: tempoDuracao,
+            servicos: servicos,
+            valorTotal: valorTotal,
+            status: "pendente",
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+          })
+          .then((docRef) => {
+            console.log(
+              "Agendamento completo salvo com sucesso! ID:",
+              docRef.id,
+            );
+          })
+          .catch((error) => {
+            console.error("Erro ao salvar agendamento: ", error);
+            alert("Erro ao salvar dados no banco. Tente novamente.");
+          });
+      }
+
+      function avancarPasso() {
+        // === SE O CLIENTE ESTIVER NA TELA DE HORÁRIOS (PASSO 2) E CLICAR EM CONFIRMAR AGENDAMENTO ===
+        if (passoAtual === 2) {
+          if (!dataSelecionada || !horarioSelecionado) {
+            alert("Por favor, selecione uma data e um horário.");
+            return;
+          }
+
+          const nomeCliente = document
+            .getElementById("input-nome")
+            .value.trim();
+          const enderecoCliente = document
+            .getElementById("input-endereco")
+            .value.trim();
+          const telefoneCliente = document
+            .getElementById("input-telefone")
+            .value.trim()
+            .replace(/\D/g, ""); // Remove traços/espaços
+
+          if (!nomeCliente || !enderecoCliente || !telefoneCliente) {
+            alert("Por favor, preencha todos os campos!");
+            return;
+          }
+
+          // Mapeia os serviços selecionados com segurança usando o nome
+          let nomesServicosSelecionados = [];
+          if (
+            typeof carrinho !== "undefined" &&
+            typeof servicos !== "undefined"
+          ) {
+            nomesServicosSelecionados = carrinho
+              .map((nomeSelecionado) => {
+                const s = servicos.find(
+                  (item) => item.nome === nomeSelecionado,
+                );
+                return s ? s.nome : "";
+              })
+              .filter((nome) => nome !== "");
+          }
+
+          // Pega o valor total (garante que se a variável sumiu, envia 0)
+          const valorFinal =
+            typeof valorTotalAtendimento !== "undefined"
+              ? valorTotalAtendimento
+              : 0;
+          const tempoFinal =
+            typeof tempoTotalAtendimento !== "undefined"
+              ? tempoTotalAtendimento
+              : 30;
+
+          // Envia os dados para o Firebase com os 8 parâmetros na ordem correta:
+          salvarAgendamentoNoFirebase(
+            dataSelecionada,
+            horarioSelecionado,
+            tempoFinal,
+            nomeCliente,
+            enderecoCliente,
+            telefoneCliente, // 6º parâmetro
+            nomesServicosSelecionados, // 7º parâmetro
+            valorFinal, // 8º parâmetro
+          );
+
+          // Esconde a tag <main>
+          const elementoMain = document.querySelector("main");
+          if (elementoMain) {
+            elementoMain.classList.add("hidden");
+          }
+
+          // Mostra a tela de sucesso e inicia a integração com o WhatsApp
+          const telaSucesso = document.getElementById("passo-sucesso");
+          if (telaSucesso) {
+            telaSucesso.classList.remove("hidden");
+
+            const numeroBarbearia = "5521977447894"; // <-- Insira o seu número aqui!
+
+            const textoMensagem =
+              `Olá! Gostaria de avisar que realizei um agendamento:\n\n` +
+              `📅 *Data:* ${dataSelecionada.split("-").reverse().join("/")}\n` +
+              `⏰ *Horário:* ${horarioSelecionado}\n` +
+              `💇‍♂️ *Serviço(s):* ${nomesServicosSelecionados.join(", ")}\n`;
+
+            const linkWhatsapp = `https://api.whatsapp.com/send?phone=${numeroBarbearia}&text=${encodeURIComponent(textoMensagem)}`;
+
+            const btnWhats = document.getElementById("btn-whatsapp-sucesso");
+            if (btnWhats) {
+              btnWhats.href = linkWhatsapp;
+            }
+          }
+          return;
         }
 
-        function selecionarHorario(hora) {
-            horarioSelecionado = hora;
-  
-            // 1. Remove a cor amarela de QUALQUER botão de horário que já estava selecionado antes
-            document.querySelectorAll('#grade-horarios button').forEach(btn => {
-                if (!btn.disabled) {
-                    btn.classList.remove('bg-amber-500', 'text-white', 'shadow-md');
-                    btn.classList.add('bg-gray-100', 'text-gray-700');
-                }
-            });
+        // === SE ELE ESTIVER NA TELA DE SERVIÇOS (PASSO 1) E CLICAR EM AVANÇAR ===
+        if (passoAtual === 1) {
+          passoAtual++;
 
-             // 2. Acha o botão exato que foi clicado com base no texto dele e pinta de amarelo
-            const botoes = document.querySelectorAll('#grade-horarios button');
-            botoes.forEach(btn => {
-                if (btn.innerText.trim() === hora.trim()) {
-                    btn.classList.remove('bg-gray-100', 'text-gray-700');
-                    btn.classList.add('bg-amber-500', 'text-white', 'shadow-md');
-                }
-            });
+          const passoServicos = document.getElementById("passo-servicos");
+          if (passoServicos) passoServicos.classList.add("hidden");
 
-            // Seus códigos que já funcionavam continuam aqui embaixo:
-            btnAcaoEl.disabled = false;
-            btnAcaoEl.innerText = "Confirmar Agendamento";
-            btnAcaoEl.className = "w-full bg-amber-600 text-white hover:bg-amber-700 font-medium py-3 rounded-lg transition-all text-center block";
+          const passoAgenda = document.getElementById("passo-agenda");
+          if (passoAgenda) passoAgenda.classList.remove("hidden");
+
+          gerarHorariosDisponiveis();
+
+          if (typeof btnAcaoEl !== "undefined") {
+            btnAcaoEl.innerText = "Selecione um Horário";
+            btnAcaoEl.disabled = true;
+          }
         }
+      }
 
-function salvarAgendamentoNoFirebase(data, horarioInicio, tempoDuracao, nome, endereco, telefone, servicos, valorTotal) {
-  // Certifique-se de que a coleção bate com o nome usado no banco ("agendamentos")
-  db.collection("agendamentos").add({
-    nome: nome,
-    endereco: endereco,
-    telefone: telefone,   
-    data: data,
-    horarioInicio: horarioInicio,
-    tempoDuracao: tempoDuracao,
-    servicos: servicos,   
-    valorTotal: valorTotal, 
-    status: "pendente",
-    criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-  })
-  .then((docRef) => {
-    console.log("Agendamento completo salvo com sucesso! ID:", docRef.id);
-  })
-  .catch((error) => {
-    console.error("Erro ao salvar agendamento: ", error);
-    alert("Erro ao salvar dados no banco. Tente novamente.");
-  });
-}
-
-function avancarPasso() {
-  // === SE O CLIENTE ESTIVER NA TELA DE HORÁRIOS (PASSO 2) E CLICAR EM CONFIRMAR AGENDAMENTO ===
-  if (passoAtual === 2) {
-    if (!dataSelecionada || !horarioSelecionado) {
-      alert("Por favor, selecione uma data e um horário.");
-      return;
-    }
-
-    const nomeCliente = document.getElementById('input-nome').value.trim();
-    const enderecoCliente = document.getElementById('input-endereco').value.trim();
-    const telefoneCliente = document.getElementById('input-telefone').value.trim().replace(/\D/g, ''); // Remove traços/espaços
-
-    if (!nomeCliente || !enderecoCliente || !telefoneCliente) {
-      alert("Por favor, preencha todos os campos!");
-      return;
-    }
-
-    // Mapeia os serviços selecionados com segurança
-    let nomesServicosSelecionados = [];
-    if (typeof carrinho !== 'undefined' && typeof servicos !== 'undefined') {
-        nomesServicosSelecionados = carrinho.map(id => {
-          const s = servicos.find(item => item.id === id);
-          return s ? s.nome : "";
-        }).filter(nome => nome !== "");
-    }
-
-    // Pega o valor total (garante que se a variável sumiu, envia 0)
-    const valorFinal = (typeof valorTotalAtendimento !== 'undefined') ? valorTotalAtendimento : 0;
-    const tempoFinal = (typeof tempoTotalAtendimento !== 'undefined') ? tempoTotalAtendimento : 30;
-
-    // Envia os dados para o Firebase com os 8 parâmetros na ordem correta:
-    salvarAgendamentoNoFirebase(
-      dataSelecionada, 
-      horarioSelecionado, 
-      tempoFinal, 
-      nomeCliente, 
-      enderecoCliente,
-      telefoneCliente,          // 6º parâmetro
-      nomesServicosSelecionados, // 7º parâmetro
-      valorFinal                // 8º parâmetro
-    );
-
-    // Esconde a tag <main>
-    const elementoMain = document.querySelector('main');
-    if (elementoMain) {
-      elementoMain.classList.add('hidden');
-    }
-
-    // Mostra a tela de sucesso e inicia a integração com o WhatsApp
-    const telaSucesso = document.getElementById('passo-sucesso');
-    if (telaSucesso) {
-      telaSucesso.classList.remove('hidden');
-      
-      const numeroBarbearia = "5521977447894"; // <-- Insira o seu número aqui!
-
-      const textoMensagem = `Olá! Gostaria de avisar que realizei um agendamento:\n\n` +
-                            `📅 *Data:* ${dataSelecionada.split('-').reverse().join('/')}\n` +
-                            `⏰ *Horário:* ${horarioSelecionado}\n` +
-                            `💇‍♂️ *Serviço(s):* ${nomesServicosSelecionados.join(', ')}\n`;
-
-      const linkWhatsapp = `https://api.whatsapp.com/send?phone=${numeroBarbearia}&text=${encodeURIComponent(textoMensagem)}`;
-
-        const btnWhats = document.getElementById('btn-whatsapp-sucesso');
-        if (btnWhats) {
-            btnWhats.href = linkWhatsapp;
-        }
-    }
-    return;
-  }
-
-  // === SE ELE ESTIVER NA TELA DE SERVIÇOS (PASSO 1) E CLICAR EM AVANÇAR ===
-  if (passoAtual === 1) {
-    passoAtual++;
-    
-    const passoServicos = document.getElementById('passo-servicos');
-    if (passoServicos) passoServicos.classList.add('hidden');
-    
-    const passoAgenda = document.getElementById('passo-agenda');
-    if (passoAgenda) passoAgenda.classList.remove('hidden');
-    
-    gerarHorariosDisponiveis();
-    
-    if (typeof btnAcaoEl !== 'undefined') {
+      // SE ELE ESTIVER NA TELA DE SERVIÇOS (PASSO 1)...
+      if (passoAtual === 1) {
+        passoAtual++;
+        document.getElementById("passo-servicos").classList.add("hidden");
+        document.getElementById("passo-agenda").classList.remove("hidden");
+        gerarHorariosDisponiveis();
         btnAcaoEl.innerText = "Selecione um Horário";
         btnAcaoEl.disabled = true;
-    }
-  }
-}
-  
-  // SE ELE ESTIVER NA TELA DE SERVIÇOS (PASSO 1)...
-  if (passoAtual === 1) {
-    passoAtual++;
-    document.getElementById('passo-servicos').classList.add('hidden');
-    document.getElementById('passo-agenda').classList.remove('hidden');
-    gerarHorariosDisponiveis();
-    btnAcaoEl.innerText = "Selecione um Horário";
-    btnAcaoEl.disabled = true; 
-  }
+      }
 
+      function voltarParaServicos() {
+        passoAtual = 1;
+        document.getElementById("passo-agenda").classList.add("hidden");
+        document.getElementById("passo-servicos").classList.remove("hidden");
 
-        function voltarParaServicos() {
-            passoAtual = 1;
-            document.getElementById('passo-agenda').classList.add('hidden');
-            document.getElementById('passo-servicos').classList.remove('hidden');
-  
-            // Reseta o botão para o estado inicial
-            btnAcaoEl.innerText = "Escolher Dia e Horário";
-            btnAcaoEl.disabled = false; 
+        // Reseta o botão para o estado inicial
+        btnAcaoEl.innerText = "Escolher Dia e Horário";
+        btnAcaoEl.disabled = false;
+      }
+
+      function reiniciarFluxo() {
+        passoAtual = 1;
+        carrinho = []; // Limpa os serviços selecionados internamente
+
+        // 1. Recarrega visualmente a lista de serviços para resetar os botões para "ADICIONAR"
+        if (typeof renderizarServicos === "function") {
+          renderizarServicos();
         }
 
-        function reiniciarFluxo() {
-            passoAtual = 1;
-            carrinho = []; // Limpa os serviços selecionados internamente
-  
-            // 1. Recarrega visualmente a lista de serviços para resetar os botões para "ADICIONAR"
-            if (typeof renderizarServicos === "function") {
-                renderizarServicos();
-            }
-  
-            // 2. Mostra novamente a tag <main> com toda a estrutura do site
-            const elementoMain = document.querySelector('main');
-            if (elementoMain) {
-                elementoMain.classList.remove('hidden');
-            }
-  
-            // 3. Esconde o sucesso e volta a mostrar a tela inicial de serviços
-            document.getElementById('passo-sucesso').classList.add('hidden');
-            document.getElementById('passo-servicos').classList.remove('hidden');
-  
-            // 4. Garante que a tela da agenda fique escondida
-            if (document.getElementById('passo-agenda')) {
-                document.getElementById('passo-agenda').classList.add('hidden');
-            }
-  
-            // 5. Atualiza os valores visuais do resumo lateral (que voltará a ficar vazio)
-            atualizarCarrinho(); 
+        // 2. Mostra novamente a tag <main> com toda a estrutura do site
+        const elementoMain = document.querySelector("main");
+        if (elementoMain) {
+          elementoMain.classList.remove("hidden");
         }
 
-        // Inicialização do App
+        // 3. Esconde o sucesso e volta a mostrar a tela inicial de serviços
+        document.getElementById("passo-sucesso").classList.add("hidden");
+        document.getElementById("passo-servicos").classList.remove("hidden");
+
+        // 4. Garante que a tela da agenda fique escondida
+        if (document.getElementById("passo-agenda")) {
+          document.getElementById("passo-agenda").classList.add("hidden");
+        }
+
+        // 5. Atualiza os valores visuais do resumo lateral (que voltará a ficar vazio)
+        atualizarCarrinho();
+      }
+
+      // Inicialização do App
+      renderizarServicos();
+      if (typeof lucide !== "undefined") {
+        lucide.createIcons();
+      }
+
+      // Garante o reset visual ao dar F5 na página
+      window.addEventListener("DOMContentLoaded", () => {
+        // 1. Força a variável a começar no 1
+        passoAtual = 1;
+
+        // 2. Garante que os serviços apareçam
+        const passoServicos = document.getElementById("passo-servicos");
+        if (passoServicos) passoServicos.classList.remove("hidden");
+
+        // 3. Garante que a agenda e o sucesso iniciem escondidos
+        const passoAgenda = document.getElementById("passo-agenda");
+        if (passoAgenda) passoAgenda.classList.add("hidden");
+
+        const passoSucesso = document.getElementById("passo-sucesso");
+        if (passoSucesso) passoSucesso.classList.add("hidden");
+
+        // 4. Executa a renderização dos serviços da sua linha 173
         renderizarServicos();
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-
-        // Garante o reset visual ao dar F5 na página
-window.addEventListener('DOMContentLoaded', () => {
-    // 1. Força a variável a começar no 1
-    passoAtual = 1; 
-
-    // 2. Garante que os serviços apareçam
-    const passoServicos = document.getElementById('passo-servicos');
-    if (passoServicos) passoServicos.classList.remove('hidden');
-
-    // 3. Garante que a agenda e o sucesso iniciem escondidos
-    const passoAgenda = document.getElementById('passo-agenda');
-    if (passoAgenda) passoAgenda.classList.add('hidden');
-
-    const passoSucesso = document.getElementById('passo-sucesso');
-    if (passoSucesso) passoSucesso.classList.add('hidden');
-
-    // 4. Executa a renderização dos serviços da sua linha 173
-    renderizarServicos(); 
-});
+      });
     </script>
 
     <script>
-        // Vais colar aqui o firebaseConfig que copiaste do passo 1
-        const firebaseConfig = {
-            apiKey: "AIzaSyCglNITpBMsiPQyOHRKJ8K10dNoQquxoHE",
-            authDomain: "projeto-barbeiro-c6fe3.firebaseapp.com",
-            projectId: "projeto-barbeiro-c6fe3",
-            storageBucket: "projeto-barbeiro-c6fe3.firebasestorage.app",
-            messagingSenderId: "251548886552",
-            appId: "1:251548886552:web:b2cf3992344300a2e0c56d"
-        };
+      // Vais colar aqui o firebaseConfig que copiaste do passo 1
+      const firebaseConfig = {
+        apiKey: "AIzaSyCglNITpBMsiPQyOHRKJ8K10dNoQquxoHE",
+        authDomain: "projeto-barbeiro-c6fe3.firebaseapp.com",
+        projectId: "projeto-barbeiro-c6fe3",
+        storageBucket: "projeto-barbeiro-c6fe3.firebasestorage.app",
+        messagingSenderId: "251548886552",
+        appId: "1:251548886552:web:b2cf3992344300a2e0c56d",
+      };
 
-        // Inicializa o Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
+      // Inicializa o Firebase
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
     </script>
-</body>
+  </body>
 </html>
