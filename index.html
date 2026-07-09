@@ -253,11 +253,16 @@
         { nome: "Sobrancelha", preco: 5, duracao: 5 },
         { nome: "Cavanhaque", preco: 15, duracao: 15 },
         { nome: "Barba", preco: 20, duracao: 15 },
-        { nome: "Tesoura", preco: 50, duracao: 30 },
-        { nome: "Pezinho", preco: 20, duracao: 5 },
+        { nome: "Corte na tesoura + Pezinho", preco: 50, duracao: 30 },
+        { nome: "Pezinho", preco: 15, duracao: 5 },
         {
-          nome: "Combo Máquina + Tesoura + Barba + Sobrancelha",
+          nome: "Combo Máquina + Tesoura + Sobrancelha + Barba ",
           preco: 70,
+          duracao: 60,
+        },
+        {
+          nome: "Combo Máquina + Tesoura + Sobrancelha + Cavanhaque",
+          preco: 60,
           duracao: 60,
         },
       ];
@@ -484,7 +489,7 @@
 
                 // Retorna o botão desativado ou ativo com base na checagem acima
                 return `
-        <button 
+        <button
           onclick="${horarioBloqueado ? "" : `selecionarHorario('${hora}')`}"
           class="p-2 text-sm font-medium rounded-lg text-center transition-all ${
             horarioBloqueado
